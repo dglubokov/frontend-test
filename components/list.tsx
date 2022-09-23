@@ -1,5 +1,5 @@
-import React from "react"
-import {useState, useMemo, useEffect, useContext} from "react"
+import React, { useEffect } from "react"
+import { useState } from "react"
 
 import styles from "../styles/Home.module.css"
 
@@ -14,6 +14,7 @@ const Data = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [err, setErr] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentData, setCurrentData] = useState([]);
 
   const handleChange = event => {
     setQuery(event.target.value);
@@ -38,7 +39,7 @@ const Data = () => {
       if (!response.ok) throw new Error(response.status.toString());
       const result = await response.json();
       const listItems = result.repositories.map((repo) =>
-        <li key={repo.toString()}>
+        <li key={repo.owner + "/" +repo.name}>
           <Item data={repo}/>
         </li>
       );
@@ -51,11 +52,16 @@ const Data = () => {
     }
   }
 
-  const currentData = useMemo(() => {
-    const firstPageIndex = (currentPage - 1) * PageSize;
-    const lastPageIndex = firstPageIndex + PageSize;
-    return data.slice(firstPageIndex, lastPageIndex);
-  }, [currentPage]);
+  useEffect(() => {
+    if (data.length > 0) {
+      const firstPageIndex = (currentPage - 1) * PageSize;
+      const lastPageIndex = firstPageIndex + PageSize;
+      setCurrentData(data.slice(firstPageIndex, lastPageIndex));
+    }
+    else {
+      setCurrentData([])
+    }
+  }, [data, currentPage, err]);
 
   return (
     <div className={styles.main__div}>
@@ -80,7 +86,7 @@ const Data = () => {
 
       {err && <h2>{err}</h2>}
 
-      {data.length > 0 && <Pagination
+      {!isLoading && data.length > 0 && <Pagination
         className="pagination-bar"
         currentPage={currentPage}
         totalCount={data.length}
@@ -88,7 +94,7 @@ const Data = () => {
         onPageChange={page => setCurrentPage(page)}
       />}
 
-      {<ul className={styles.list}>{currentData}</ul>}
+      {!isLoading && <ul className={styles.list}>{currentData}</ul>}
     </div>
   );
 }
